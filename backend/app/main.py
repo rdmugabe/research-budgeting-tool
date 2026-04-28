@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import Base, engine
-from app.routes import price_master
+from app.routes import price_master, trial
 
 # MVP: create tables on startup. Switch to Alembic before any non-local deploy.
 Base.metadata.create_all(bind=engine)
@@ -24,3 +24,4 @@ def health():
 
 
 app.include_router(price_master.router)
+app.include_router(trial.router)
