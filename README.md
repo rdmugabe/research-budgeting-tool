@@ -5,8 +5,11 @@ a client-supplied Schedule of Activity (SOA) visit grid plus quantity
 assumptions and produces (a) a per-visit Rate-Coverage breakdown and (b) a
 Final Budget Presentation, both reproducible across negotiation rounds.
 
-Status: **MVP scaffolding** — backend skeleton, data model, and PRA seed
-importer in place. No frontend or auth yet.
+Status: **MVP** — backend (data model, SOA upload + parser, pricing engine,
+budget rounds with overrides, xlsx exporters) and a Next.js frontend
+(trials list, trial detail with SOA upload + quantities, round detail with
+computed budget + overrides + exports) are in place. **No auth yet** —
+runs locally only.
 
 ## Layout
 
@@ -26,16 +29,26 @@ research-budgeting-tool/
 
 ## Local setup
 
+### Backend
 ```bash
 cd backend
 python3 -m venv .venv
 .venv/bin/pip install -e .
-.venv/bin/pip install httpx                   # for TestClient
 .venv/bin/python -m app.seed.import_pra        # seeds price master + fixed fees
-.venv/bin/uvicorn app.main:app --reload        # http://localhost:8000
+.venv/bin/uvicorn app.main:app --reload        # http://127.0.0.1:8000
 ```
 
-Open `http://localhost:8000/docs` for the interactive API docs.
+Open `http://127.0.0.1:8000/docs` for the interactive API docs.
+
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev                                    # http://localhost:3000
+```
+
+Note: on macOS use `127.0.0.1`, not `localhost`, if other services are
+already bound to port 8000 over IPv6.
 
 ## Domain model
 
@@ -67,10 +80,9 @@ Open `http://localhost:8000/docs` for the interactive API docs.
 
 ## Next milestones
 
-1. SOA upload endpoint + parser (match by procedure code, surface unmapped rows).
-2. Quantities CRUD endpoint.
-3. Pricing engine service (per-visit + trial roll-up, sponsor/medicare split).
-4. xlsx export (Final Budget Presentation, PRA workbook).
-5. Next.js frontend with spreadsheet-style SOA editor.
-6. Auth (multi-user) before any cloud deploy.
-7. Move from `Base.metadata.create_all` to Alembic migrations.
+1. Auth (multi-user) — required before cloud deploy.
+2. Migrate from `Base.metadata.create_all` to Alembic.
+3. Postgres for cloud deploy (data model is already Postgres-compatible).
+4. Side-by-side round comparison view in the UI.
+5. Admin UI for editing the price master (currently only seed-importable).
+6. Audit log surfacing in the UI.
