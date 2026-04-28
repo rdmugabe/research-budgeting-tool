@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
@@ -18,6 +19,7 @@ from app.schemas.budget import (
     ComputedBudget,
 )
 from app.services.pricing import compute_budget
+from app.services.xlsx_export import write_final_budget, write_pra_workbook
 
 router = APIRouter(prefix="/trials/{trial_id}/rounds", tags=["budget-rounds"])
 
@@ -160,3 +162,38 @@ def compute(trial_id: int, round_id: int, db: Session = Depends(get_db)):
     trial = _get_trial(db, trial_id)
     rd = _get_round(db, trial_id, round_id)
     return compute_budget(db, trial, rd)
+
+
+XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+def _safe_filename(s: str) -> str:
+    return "".join(c if c.isalnum() or c in "-_." else "_" for c in s)[:80]
+
+
+@router.get("/{round_id}/export/final-budget")
+def export_final_budget(trial_id: int, round_id: int, db: Session = Depends(get_db)):
+    trial = _get_trial(db, trial_id)
+    rd = _get_round(db, trial_id, round_id)
+    comp = compute_budget(db, trial, rd)
+    data = write_final_budget(comp, trial.name)
+    filename = f"{_safe_filename(trial.name)}_FinalBudget_R{rd.round_number}.xlsx"
+    return StreamingResponse(
+        iter([data]),
+        media_type=XLSX_MIME,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/{round_id}/export/pra")
+def export_pra(trial_id: int, round_id: int, db: Session = Depends(get_db)):
+    trial = _get_trial(db, trial_id)
+    rd = _get_round(db, trial_id, round_id)
+    comp = compute_budget(db, trial, rd)
+    data = write_pra_workbook(comp, trial.name)
+    filename = f"{_safe_filename(trial.name)}_PRA_R{rd.round_number}.xlsx"
+    return StreamingResponse(
+        iter([data]),
+        media_type=XLSX_MIME,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
