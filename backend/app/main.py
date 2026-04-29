@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import settings
 from app.routes import price_master, trial, budget, audit, auth
 
 # Schema is managed by Alembic — run `alembic upgrade head` before starting
@@ -10,7 +11,7 @@ app = FastAPI(title="Research Budgeting Tool", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

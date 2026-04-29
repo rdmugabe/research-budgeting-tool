@@ -1,0 +1,32 @@
+# Render Blueprint — provisions the backend web service + Postgres database
+# in one click. After import, set FRONTEND_ORIGIN to your Amplify URL.
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: rbt-backend
+    runtime: docker
+    plan: free                    # bump to "starter" ($7/mo) for always-on
+    region: oregon
+    dockerfilePath: backend/Dockerfile
+    dockerContext: .              # build context = repo root (Dockerfile reads samples/)
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rbt-postgres
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true       # Render generates a strong secret on first deploy
+      - key: CORS_ORIGINS
+        sync: false               # set this in the Render dashboard to your Amplify URL
+                                  # e.g. https://main.dxxxxx.amplifyapp.com
+      - key: SAMPLES_DIR
+        value: /samples
+
+databases:
+  - name: rbt-postgres
+    plan: free                    # 90-day retention; upgrade to "basic-256mb" ($7/mo) for production
+    region: oregon
+    databaseName: rbt
+    user: rbt
