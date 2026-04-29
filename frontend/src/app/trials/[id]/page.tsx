@@ -263,13 +263,23 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
       <section className="rounded border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Budget Rounds</h2>
-          <button
-            onClick={createRound}
-            className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
-            disabled={busy || cells.length === 0}
-          >
-            New round
-          </button>
+          <div className="flex gap-2">
+            {rounds.length >= 2 && (
+              <Link
+                href={`/trials/${trialId}/compare`}
+                className="rounded border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50"
+              >
+                Compare rounds
+              </Link>
+            )}
+            <button
+              onClick={createRound}
+              className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+              disabled={busy || cells.length === 0}
+            >
+              New round
+            </button>
+          </div>
         </div>
         {rounds.length === 0 ? (
           <p className="text-sm text-slate-500">
