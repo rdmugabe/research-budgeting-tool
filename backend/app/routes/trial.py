@@ -21,6 +21,9 @@ from app.schemas.trial import (
     TrialQuantitiesUpsert,
 )
 from app.services.soa_parser import parse_soa_bytes, match_against_price_master
+from app.services import audit
+from app.services.auth import get_current_user_optional
+from app.models import User
 
 router = APIRouter(prefix="/trials", tags=["trials"])
 
@@ -50,7 +53,11 @@ def _latest_fixed_fee_template(db: Session) -> FixedFeeTemplate:
 
 
 @router.post("", response_model=TrialRead)
-def create_trial(payload: TrialCreate, db: Session = Depends(get_db)):
+def create_trial(
+    payload: TrialCreate,
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_current_user_optional),
+):
     pmv_id = payload.price_master_version_id or _latest_price_master(db).id
     fft_id = payload.fixed_fee_template_id or _latest_fixed_fee_template(db).id
 
@@ -62,6 +69,15 @@ def create_trial(payload: TrialCreate, db: Session = Depends(get_db)):
         fixed_fee_template_id=fft_id,
     )
     db.add(trial)
+    db.flush()
+    audit.record(
+        db,
+        entity_type="trial",
+        entity_id=trial.id,
+        action="created",
+        user_id=current_user.id if current_user else None,
+        details=f"name={payload.name!r} sponsor={payload.sponsor!r}",
+    )
     db.commit()
     db.refresh(trial)
     return trial
@@ -124,6 +140,13 @@ async def upload_soa(
                 visit_label=m["visit_label"],
             )
         )
+    audit.record(
+        db,
+        entity_type="trial",
+        entity_id=trial_id,
+        action="soa_uploaded",
+        details=f"matched={len(match.matched_cells)} unmatched={len(match.unmatched_codes)}",
+    )
     db.commit()
 
     cells = (
@@ -181,6 +204,13 @@ def upsert_quantities(
                     completion_count=q.completion_count,
                 )
             )
+    audit.record(
+        db,
+        entity_type="trial",
+        entity_id=trial_id,
+        action="quantities_updated",
+        details=f"count={len(payload.quantities)}",
+    )
     db.commit()
 
     return (

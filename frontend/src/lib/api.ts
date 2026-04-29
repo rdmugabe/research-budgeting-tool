@@ -1,6 +1,24 @@
 // Thin client for the FastAPI backend. Server URL comes from NEXT_PUBLIC_API_URL.
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const TOKEN_KEY = "rbt_token";
+
+export const auth = {
+  getToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem(TOKEN_KEY);
+  },
+  setToken(token: string | null) {
+    if (typeof window === "undefined") return;
+    if (token) window.localStorage.setItem(TOKEN_KEY, token);
+    else window.localStorage.removeItem(TOKEN_KEY);
+  },
+};
+
+function authHeader(): Record<string, string> {
+  const t = auth.getToken();
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
@@ -8,9 +26,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: {
       "Content-Type": "application/json",
+      ...authHeader(),
       ...(init?.headers || {}),
     },
   });
+  if (res.status === 401 && typeof window !== "undefined") {
+    auth.setToken(null);
+    if (window.location.pathname !== "/login") {
+      window.location.href = "/login";
+    }
+  }
   if (!res.ok) {
     let message = `${res.status} ${res.statusText}`;
     try {
@@ -33,6 +58,66 @@ export interface PriceMasterVersion {
   is_published: boolean;
   notes: string | null;
   created_at: string;
+}
+
+export interface ProcedureWithPrice {
+  id: number;
+  code: string;
+  name: string;
+  category: string | null;
+  coverage_status: CoverageStatus;
+  cpt_code: string | null;
+  price: {
+    medicare_rate: number | null;
+    amc_base_charge: number;
+    overhead_pct: number;
+    excluded_from_oh: boolean;
+    sponsor_share: number;
+    medicare_share: number;
+    total_with_oh: number;
+  };
+}
+
+export interface PriceMasterVersionDetail extends PriceMasterVersion {
+  procedures: ProcedureWithPrice[];
+}
+
+export interface ProcedureWriteBody {
+  code: string;
+  name: string;
+  category?: string | null;
+  coverage_status: CoverageStatus;
+  cpt_code?: string | null;
+  medicare_rate?: number | null;
+  amc_base_charge: number;
+  overhead_pct: number;
+  excluded_from_oh: boolean;
+  sponsor_share: number;
+  medicare_share: number;
+}
+
+export interface FixedFee {
+  id: number;
+  template_id: number;
+  name: string;
+  kind: "SITE_FEE" | "PASS_THROUGH";
+  sponsor_proposed: number | null;
+  site_default: number;
+  frequency: string;
+  sort_order: number;
+}
+
+export interface FixedFeeTemplate {
+  id: number;
+  label: string;
+  effective_date: string;
+  is_published: boolean;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface FixedFeeTemplateDetail extends FixedFeeTemplate {
+  fees: FixedFee[];
 }
 
 export interface Trial {
@@ -147,10 +232,64 @@ export interface ComputedBudget {
 
 // --- API ---
 
+export interface AuthUser {
+  id: number;
+  email: string;
+  full_name: string | null;
+  role: "ADMIN" | "ANALYST" | "VIEWER";
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+  user: AuthUser;
+}
+
 export const api = {
   health: () => request<{ status: string }>("/health"),
 
+  register: (body: { email: string; password: string; full_name?: string }) =>
+    request<TokenResponse>("/auth/register", { method: "POST", body: JSON.stringify(body) }),
+  login: (body: { email: string; password: string }) =>
+    request<TokenResponse>("/auth/login", { method: "POST", body: JSON.stringify(body) }),
+  me: () => request<AuthUser>("/auth/me"),
+
   listVersions: () => request<PriceMasterVersion[]>("/price-master/versions"),
+  getVersion: (id: number) =>
+    request<PriceMasterVersionDetail>(`/price-master/versions/${id}`),
+  createVersion: (body: { label: string; clone_from_version_id?: number; notes?: string }) =>
+    request<PriceMasterVersionDetail>("/price-master/versions", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  publishVersion: (id: number) =>
+    request<PriceMasterVersion>(`/price-master/versions/${id}/publish`, { method: "POST" }),
+  updateProcedure: (versionId: number, procedureId: number, body: ProcedureWriteBody) =>
+    request<ProcedureWithPrice>(
+      `/price-master/versions/${versionId}/procedures/${procedureId}`,
+      { method: "PUT", body: JSON.stringify(body) },
+    ),
+  addProcedure: (versionId: number, body: ProcedureWriteBody) =>
+    request<ProcedureWithPrice>(`/price-master/versions/${versionId}/procedures`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  deleteProcedure: (versionId: number, procedureId: number) =>
+    request<{ deleted: number }>(
+      `/price-master/versions/${versionId}/procedures/${procedureId}`,
+      { method: "DELETE" },
+    ),
+  listFixedFeeTemplates: () =>
+    request<FixedFeeTemplate[]>("/price-master/fixed-fee-templates"),
+  getFixedFeeTemplate: (id: number) =>
+    request<FixedFeeTemplateDetail>(`/price-master/fixed-fee-templates/${id}`),
+  updateFixedFee: (templateId: number, feeId: number, body: Omit<FixedFee, "id" | "template_id">) =>
+    request<FixedFee>(
+      `/price-master/fixed-fee-templates/${templateId}/fees/${feeId}`,
+      { method: "PUT", body: JSON.stringify(body) },
+    ),
 
   listTrials: () => request<Trial[]>("/trials"),
   getTrial: (id: number) => request<Trial>(`/trials/${id}`),
@@ -160,7 +299,11 @@ export const api = {
   uploadSOA: async (trialId: number, file: File): Promise<SOAUploadResult> => {
     const fd = new FormData();
     fd.append("file", file);
-    const res = await fetch(`${API_URL}/trials/${trialId}/soa`, { method: "POST", body: fd });
+    const res = await fetch(`${API_URL}/trials/${trialId}/soa`, {
+      method: "POST",
+      body: fd,
+      headers: { ...authHeader() },
+    });
     if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
     return res.json();
   },
@@ -205,7 +348,26 @@ export const api = {
     `${API_URL}/trials/${trialId}/rounds/${roundId}/export/final-budget`,
   exportPRAUrl: (trialId: number, roundId: number) =>
     `${API_URL}/trials/${trialId}/rounds/${roundId}/export/pra`,
+
+  listAudit: (params?: { entity_type?: string; entity_id?: number; limit?: number }) => {
+    const sp = new URLSearchParams();
+    if (params?.entity_type) sp.set("entity_type", params.entity_type);
+    if (params?.entity_id !== undefined) sp.set("entity_id", String(params.entity_id));
+    if (params?.limit !== undefined) sp.set("limit", String(params.limit));
+    const qs = sp.toString();
+    return request<AuditLogEntry[]>(`/audit${qs ? `?${qs}` : ""}`);
+  },
 };
+
+export interface AuditLogEntry {
+  id: number;
+  created_at: string;
+  user_id: number | null;
+  entity_type: string;
+  entity_id: number | null;
+  action: string;
+  details: string | null;
+}
 
 export const fmtMoney = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD" });

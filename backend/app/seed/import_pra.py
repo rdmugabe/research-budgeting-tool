@@ -18,7 +18,7 @@ from pathlib import Path
 import openpyxl
 
 from app.config import settings
-from app.db import SessionLocal, Base, engine
+from app.db import SessionLocal
 from app.models import (
     PriceMasterVersion,
     Procedure,
@@ -239,7 +239,6 @@ def main():
     parser.add_argument("--xlsx", default=str(settings.samples_dir / PRA_FILENAME))
     args = parser.parse_args()
 
-    Base.metadata.create_all(bind=engine)
     import_price_master(Path(args.xlsx), label=args.label)
     seed_default_fixed_fees(label=args.label)
 

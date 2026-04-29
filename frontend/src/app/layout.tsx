@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import AuthBar from "@/components/AuthBar";
 
 export const metadata: Metadata = {
   title: "Research Budgeting Tool",
@@ -16,11 +17,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="text-lg font-semibold tracking-tight">
               Research Budgeting Tool
             </Link>
-            <nav className="text-sm">
-              <Link href="/" className="text-slate-600 hover:text-slate-900">
-                Trials
-              </Link>
-            </nav>
+            <div className="flex items-center gap-6">
+              <nav className="flex gap-4 text-sm">
+                <Link href="/" className="text-slate-600 hover:text-slate-900">
+                  Trials
+                </Link>
+                <Link href="/admin/price-master" className="text-slate-600 hover:text-slate-900">
+                  Price Master
+                </Link>
+                <Link href="/admin/fixed-fees" className="text-slate-600 hover:text-slate-900">
+                  Fixed Fees
+                </Link>
+                <Link href="/admin/audit" className="text-slate-600 hover:text-slate-900">
+                  Audit Log
+                </Link>
+              </nav>
+              <AuthBar />
+            </div>
           </div>
         </header>
         <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>

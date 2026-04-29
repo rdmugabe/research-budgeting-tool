@@ -20,6 +20,7 @@ from app.schemas.budget import (
 )
 from app.services.pricing import compute_budget
 from app.services.xlsx_export import write_final_budget, write_pra_workbook
+from app.services import audit
 
 router = APIRouter(prefix="/trials/{trial_id}/rounds", tags=["budget-rounds"])
 
@@ -59,6 +60,14 @@ def create_round(trial_id: int, payload: BudgetRoundCreate, db: Session = Depend
         notes=payload.notes,
     )
     db.add(rd)
+    db.flush()
+    audit.record(
+        db,
+        entity_type="budget_round",
+        entity_id=rd.id,
+        action="created",
+        details=f"trial={trial_id} round={next_num} label={payload.label!r}",
+    )
     db.commit()
     db.refresh(rd)
     return rd
@@ -84,6 +93,13 @@ def get_round(trial_id: int, round_id: int, db: Session = Depends(get_db)):
 def freeze_round(trial_id: int, round_id: int, db: Session = Depends(get_db)):
     rd = _get_round(db, trial_id, round_id)
     rd.is_frozen = True
+    audit.record(
+        db,
+        entity_type="budget_round",
+        entity_id=round_id,
+        action="frozen",
+        details=f"trial={trial_id} round={rd.round_number}",
+    )
     db.commit()
     db.refresh(rd)
     return rd
@@ -124,6 +140,18 @@ def add_override(
         reason=payload.reason,
     )
     db.add(ov)
+    db.flush()
+    audit.record(
+        db,
+        entity_type="budget_round_override",
+        entity_id=ov.id,
+        action="created",
+        details=(
+            f"round={round_id} kind={payload.target_kind} "
+            f"proc={payload.procedure_id} fee={payload.fixed_fee_id} "
+            f"new_amount={payload.new_amount} new_base={payload.new_amc_base_charge}"
+        ),
+    )
     db.commit()
     db.refresh(ov)
     return ov
@@ -153,6 +181,13 @@ def delete_override(
     if not ov:
         raise HTTPException(404, "Override not found")
     db.delete(ov)
+    audit.record(
+        db,
+        entity_type="budget_round_override",
+        entity_id=override_id,
+        action="deleted",
+        details=f"round={round_id}",
+    )
     db.commit()
     return {"deleted": override_id}
 

@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rbt-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rbt
+      POSTGRES_PASSWORD: rbt
+      POSTGRES_DB: rbt
+    ports:
+      - "5432:5432"
+    volumes:
+      - rbt-pgdata:/var/lib/postgresql/data
+
+volumes:
+  rbt-pgdata:

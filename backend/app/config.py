@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     exports_dir: Path = PROJECT_ROOT / "exports"
 
     default_overhead_pct: float = 0.40
+    jwt_secret: str = "dev-secret-change-me-before-cloud"
 
 
 settings = Settings()

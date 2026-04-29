@@ -1,11 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.db import Base, engine
-from app.routes import price_master, trial, budget
+from app.routes import price_master, trial, budget, audit, auth
 
-# MVP: create tables on startup. Switch to Alembic before any non-local deploy.
-Base.metadata.create_all(bind=engine)
+# Schema is managed by Alembic — run `alembic upgrade head` before starting
+# the app for the first time or after pulling new migrations.
 
 app = FastAPI(title="Research Budgeting Tool", version="0.1.0")
 
@@ -23,6 +22,8 @@ def health():
     return {"status": "ok"}
 
 
+app.include_router(auth.router)
 app.include_router(price_master.router)
 app.include_router(trial.router)
 app.include_router(budget.router)
+app.include_router(audit.router)
