@@ -8,14 +8,12 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install the Python package first so the pip layer caches across code changes.
-COPY backend/pyproject.toml ./
-RUN pip install --upgrade pip && pip install .
-
-# Copy the rest of the backend (app + alembic) plus the samples used by the
-# one-shot seed importer.
+# Copy the backend source first because pyproject.toml declares
+# packages = ["app"], so pip needs the app/ directory present at install time.
 COPY backend/ ./
 COPY samples/ /samples/
+
+RUN pip install --upgrade pip && pip install .
 
 # Tell the seed importer where to find the sample workbooks at runtime.
 ENV SAMPLES_DIR=/samples
@@ -25,6 +23,6 @@ ENV PORT=8000
 EXPOSE 8000
 
 # Apply migrations at startup, then run the server.
-# Seed import is a manual one-shot — after the first deploy, run via the
-# Render shell:  python -m app.seed.import_pra
+# Seed import is a manual one-shot — after the first deploy, run locally
+# pointed at the cloud DB:  python -m app.seed.import_pra
 CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
