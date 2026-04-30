@@ -30,6 +30,19 @@ class Settings(BaseSettings):
         return [o.strip() for o in raw.split(",") if o.strip()]
 
 
+def _normalize_database_url(url: str) -> str:
+    """Render's managed Postgres injects DATABASE_URL with the bare
+    `postgresql://` scheme, which SQLAlchemy resolves to the legacy psycopg2
+    driver. We use psycopg v3, so rewrite the prefix to force the right driver.
+    """
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + url[len("postgresql://"):]
+    if url.startswith("postgres://"):  # some platforms use this older alias
+        return "postgresql+psycopg://" + url[len("postgres://"):]
+    return url
+
+
 settings = Settings()
+settings.database_url = _normalize_database_url(settings.database_url)
 settings.uploads_dir.mkdir(parents=True, exist_ok=True)
 settings.exports_dir.mkdir(parents=True, exist_ok=True)
