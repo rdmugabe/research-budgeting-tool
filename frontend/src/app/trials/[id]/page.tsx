@@ -23,6 +23,8 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
   const [err, setErr] = useState<string | null>(null);
   const [uploadResult, setUploadResult] = useState<SOAUploadResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [startCount, setStartCount] = useState(100);
+  const [dropoutPct, setDropoutPct] = useState(2);
 
   const loadAll = async () => {
     try {
@@ -46,8 +48,18 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trialId]);
 
+  // Preserve the order visits first appear in the uploaded SOA (chronological).
+  // SOA cells come back ordered by insertion id, so a single pass is enough.
   const visitLabels = useMemo(() => {
-    return Array.from(new Set(cells.map((c) => c.visit_label))).sort();
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const c of cells) {
+      if (!seen.has(c.visit_label)) {
+        seen.add(c.visit_label);
+        out.push(c.visit_label);
+      }
+    }
+    return out;
   }, [cells]);
 
   const quantitiesByVisit = useMemo(() => {
@@ -106,6 +118,23 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
       completion_count: value,
     }));
     await saveQuantities(all);
+  }
+
+  // Compute per-visit completion by applying compounding dropout over the
+  // visits in their chronological order. visit_i = round(start * (1-r)^i).
+  // Stored in both enrolled_count and completion_count for now — they're
+  // treated identically by the pricing engine.
+  async function applyDropout() {
+    const r = Math.max(0, Math.min(100, dropoutPct)) / 100;
+    const generated = visitLabels.map((v, i) => {
+      const remaining = Math.max(0, Math.round(startCount * Math.pow(1 - r, i)));
+      return {
+        visit_label: v,
+        enrolled_count: remaining,
+        completion_count: remaining,
+      };
+    });
+    await saveQuantities(generated);
   }
 
   async function createRound() {
@@ -210,6 +239,44 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
                 Save
               </button>
             </div>
+          </div>
+
+          {/* Dropout generator */}
+          <div className="mb-4 flex flex-wrap items-end gap-3 rounded bg-slate-50 p-3 text-sm">
+            <label>
+              <span className="mb-1 block text-xs font-medium text-slate-600">Starting count</span>
+              <input
+                type="number"
+                min={0}
+                value={startCount}
+                onChange={(e) => setStartCount(Number(e.target.value) || 0)}
+                className="w-24 rounded border border-slate-300 px-2 py-1"
+              />
+            </label>
+            <label>
+              <span className="mb-1 block text-xs font-medium text-slate-600">Dropout per visit (%)</span>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step={0.5}
+                value={dropoutPct}
+                onChange={(e) => setDropoutPct(Number(e.target.value) || 0)}
+                className="w-24 rounded border border-slate-300 px-2 py-1"
+              />
+            </label>
+            <button
+              onClick={applyDropout}
+              disabled={busy}
+              className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+            >
+              Apply decay
+            </button>
+            <span className="text-xs text-slate-500">
+              Generates each visit&apos;s completion as
+              <code className="mx-1 rounded bg-white px-1">round(start × (1 − r)<sup>n</sup>)</code>
+              over the visits in SOA order. You can still fine-tune individual cells after.
+            </span>
           </div>
           <table className="w-full text-sm">
             <thead className="border-b border-slate-200 text-left">
