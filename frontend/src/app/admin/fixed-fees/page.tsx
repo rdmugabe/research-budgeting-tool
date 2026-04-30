@@ -142,8 +142,7 @@ function FeeTable({
           <thead className="border-b border-slate-200 bg-slate-50 text-left">
             <tr>
               <th className="px-3 py-2 font-medium">Name</th>
-              <th className="px-3 py-2 text-right font-medium">Sponsor proposed</th>
-              <th className="px-3 py-2 text-right font-medium">Site amount</th>
+              <th className="px-3 py-2 text-right font-medium">Amount</th>
               <th className="px-3 py-2 font-medium">Frequency</th>
               <th className="px-3 py-2"></th>
             </tr>
@@ -159,21 +158,6 @@ function FeeTable({
                         value={draft.name}
                         onChange={(e) => onChange({ ...draft, name: e.target.value })}
                         className="w-full rounded border border-slate-300 px-2 py-1 text-xs"
-                      />
-                    </td>
-                    <td className="px-3 py-1.5 text-right">
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={draft.sponsor_proposed ?? ""}
-                        onChange={(e) =>
-                          onChange({
-                            ...draft,
-                            sponsor_proposed: e.target.value === "" ? null : Number(e.target.value),
-                          })
-                        }
-                        placeholder="—"
-                        className="w-28 rounded border border-slate-300 px-2 py-1 text-right text-xs tabular-nums"
                       />
                     </td>
                     <td className="px-3 py-1.5 text-right">
@@ -212,9 +196,6 @@ function FeeTable({
               return (
                 <tr key={f.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                   <td className="px-3 py-1.5">{f.name}</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums text-slate-600">
-                    {f.sponsor_proposed === null ? "—" : fmtMoney(f.sponsor_proposed)}
-                  </td>
                   <td className="px-3 py-1.5 text-right tabular-nums">{fmtMoney(f.site_default)}</td>
                   <td className="px-3 py-1.5 text-slate-600">{f.frequency}</td>
                   <td className="px-3 py-1.5 text-right">
