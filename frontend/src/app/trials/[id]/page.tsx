@@ -25,6 +25,8 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
   const [busy, setBusy] = useState(false);
   const [startCount, setStartCount] = useState(100);
   const [dropoutPct, setDropoutPct] = useState(2);
+  const [screenFailPct, setScreenFailPct] = useState(30);
+  const [randVisit, setRandVisit] = useState<string>("");
 
   const loadAll = async () => {
     try {
@@ -61,6 +63,14 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
     }
     return out;
   }, [cells]);
+
+  // Default the randomization visit to the first label containing "rand"
+  // (case-insensitive); fall back to the first visit if none matches.
+  useEffect(() => {
+    if (randVisit || visitLabels.length === 0) return;
+    const guess = visitLabels.find((v) => /rand/i.test(v)) || visitLabels[0];
+    setRandVisit(guess);
+  }, [visitLabels, randVisit]);
 
   const quantitiesByVisit = useMemo(() => {
     const m: Record<string, TrialQuantity> = {};
@@ -120,14 +130,30 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
     await saveQuantities(all);
   }
 
-  // Compute per-visit completion by applying compounding dropout over the
-  // visits in their chronological order. visit_i = round(start * (1-r)^i).
-  // Stored in both enrolled_count and completion_count for now — they're
-  // treated identically by the pricing engine.
+  // Compute per-visit completion using two levers:
+  //   * screen-fail rate (sf): inflates pre-randomization visits so that the
+  //     post-randomization population still hits `startCount`. Screened count
+  //     = round(start / (1 - sf)).
+  //   * dropout per visit (r): compounding decay applied to visits AT and
+  //     AFTER the randomization visit, indexed from there. Pre-rand visits
+  //     all share the screened count (no decay before randomization).
+  // Stored in both enrolled_count and completion_count — pricing only uses
+  // completion today, but enrolled is kept symmetric for visibility.
   async function applyDropout() {
+    if (visitLabels.length === 0) return;
     const r = Math.max(0, Math.min(100, dropoutPct)) / 100;
+    const sf = Math.max(0, Math.min(99, screenFailPct)) / 100;
+    const randIdx = Math.max(0, visitLabels.indexOf(randVisit));
+    const screenedCount = Math.round(startCount / Math.max(0.01, 1 - sf));
+
     const generated = visitLabels.map((v, i) => {
-      const remaining = Math.max(0, Math.round(startCount * Math.pow(1 - r, i)));
+      let remaining: number;
+      if (i < randIdx) {
+        remaining = screenedCount;
+      } else {
+        remaining = Math.round(startCount * Math.pow(1 - r, i - randIdx));
+      }
+      remaining = Math.max(0, remaining);
       return {
         visit_label: v,
         enrolled_count: remaining,
@@ -241,42 +267,80 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
             </div>
           </div>
 
-          {/* Dropout generator */}
-          <div className="mb-4 flex flex-wrap items-end gap-3 rounded bg-slate-50 p-3 text-sm">
-            <label>
-              <span className="mb-1 block text-xs font-medium text-slate-600">Starting count</span>
-              <input
-                type="number"
-                min={0}
-                value={startCount}
-                onChange={(e) => setStartCount(Number(e.target.value) || 0)}
-                className="w-24 rounded border border-slate-300 px-2 py-1"
-              />
-            </label>
-            <label>
-              <span className="mb-1 block text-xs font-medium text-slate-600">Dropout per visit (%)</span>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                step={0.5}
-                value={dropoutPct}
-                onChange={(e) => setDropoutPct(Number(e.target.value) || 0)}
-                className="w-24 rounded border border-slate-300 px-2 py-1"
-              />
-            </label>
-            <button
-              onClick={applyDropout}
-              disabled={busy}
-              className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
-            >
-              Apply decay
-            </button>
-            <span className="text-xs text-slate-500">
-              Generates each visit&apos;s completion as
-              <code className="mx-1 rounded bg-white px-1">round(start × (1 − r)<sup>n</sup>)</code>
-              over the visits in SOA order. You can still fine-tune individual cells after.
-            </span>
+          {/* Dropout + screen-fail generator */}
+          <div className="mb-4 rounded bg-slate-50 p-3 text-sm">
+            <div className="flex flex-wrap items-end gap-3">
+              <label>
+                <span className="mb-1 block text-xs font-medium text-slate-600">
+                  Target post-rand
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  value={startCount}
+                  onChange={(e) => setStartCount(Number(e.target.value) || 0)}
+                  className="w-24 rounded border border-slate-300 px-2 py-1"
+                />
+              </label>
+              <label>
+                <span className="mb-1 block text-xs font-medium text-slate-600">
+                  Screen fail (%)
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  max={99}
+                  step={0.5}
+                  value={screenFailPct}
+                  onChange={(e) => setScreenFailPct(Number(e.target.value) || 0)}
+                  className="w-24 rounded border border-slate-300 px-2 py-1"
+                />
+              </label>
+              <label>
+                <span className="mb-1 block text-xs font-medium text-slate-600">
+                  Randomization visit
+                </span>
+                <select
+                  value={randVisit}
+                  onChange={(e) => setRandVisit(e.target.value)}
+                  className="max-w-xs rounded border border-slate-300 px-2 py-1"
+                >
+                  {visitLabels.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span className="mb-1 block text-xs font-medium text-slate-600">
+                  Dropout per visit (%)
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  value={dropoutPct}
+                  onChange={(e) => setDropoutPct(Number(e.target.value) || 0)}
+                  className="w-24 rounded border border-slate-300 px-2 py-1"
+                />
+              </label>
+              <button
+                onClick={applyDropout}
+                disabled={busy}
+                className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+              >
+                Apply
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-slate-500">
+              Pre-randomization visits are sized at{" "}
+              <code className="rounded bg-white px-1">target / (1 − screen fail)</code>; from
+              randomization onward the count decays as{" "}
+              <code className="rounded bg-white px-1">round(target × (1 − r)<sup>n</sup>)</code>.
+              You can still fine-tune any cell after applying.
+            </p>
           </div>
           <table className="w-full text-sm">
             <thead className="border-b border-slate-200 text-left">
