@@ -97,21 +97,21 @@ export default function CompareRoundsPage({ params }: { params: { id: string } }
   }, [orderedSelected]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link href={`/trials/${trialId}`} className="text-sm text-blue-700 hover:underline">
+    <div className="space-y-8">
+      <header>
+        <Link href={`/trials/${trialId}`} className="text-sm font-medium text-indigo-700 hover:text-indigo-900">
           ← Back to trial
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Compare rounds</h1>
-        <p className="text-sm text-slate-600">
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">Compare rounds</h1>
+        <p className="mt-1 text-sm text-slate-600">
           Pick two or more rounds to see how the budget changes across negotiation steps.
         </p>
-      </div>
+      </header>
 
-      {err && <div className="rounded bg-red-50 p-3 text-sm text-red-700">{err}</div>}
+      {err && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200">{err}</div>}
 
-      <section className="rounded border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="mb-2 text-sm font-medium text-slate-700">Rounds</div>
+      <section className="card p-5">
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Rounds</div>
         <div className="flex flex-wrap gap-2">
           {rounds.length === 0 ? (
             <span className="text-sm text-slate-500">No rounds on this trial yet.</span>
@@ -122,9 +122,9 @@ export default function CompareRoundsPage({ params }: { params: { id: string } }
                 <button
                   key={r.id}
                   onClick={() => toggle(r.id)}
-                  className={`rounded border px-3 py-1.5 text-sm ${
+                  className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
                     on
-                      ? "border-slate-900 bg-slate-900 text-white"
+                      ? "border-indigo-600 bg-indigo-600 text-white shadow-sm"
                       : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                   }`}
                 >

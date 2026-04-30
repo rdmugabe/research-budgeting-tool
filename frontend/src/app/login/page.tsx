@@ -47,73 +47,74 @@ function LoginInner() {
   }
 
   return (
-    <div className="mx-auto max-w-sm">
-      <h1 className="mb-2 text-2xl font-semibold">
-        {mode === "login" ? "Sign in" : "Create account"}
-      </h1>
-      <p className="mb-6 text-sm text-slate-600">
-        {mode === "login" ? (
-          <>
-            Need an account?{" "}
-            <button
-              onClick={() => setMode("register")}
-              className="text-blue-700 hover:underline"
-            >
-              Register
-            </button>
-            . The first registered user becomes the admin.
-          </>
-        ) : (
-          <>
-            Already have one?{" "}
-            <button
-              onClick={() => setMode("login")}
-              className="text-blue-700 hover:underline"
-            >
-              Sign in
-            </button>
-            .
-          </>
-        )}
-      </p>
+    <div className="mx-auto max-w-sm pt-4">
+      <div className="mb-6 text-center">
+        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-lg font-bold text-white shadow-md">
+          R
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+          {mode === "login" ? "Welcome back" : "Create your account"}
+        </h1>
+        <p className="mt-1 text-sm text-slate-600">
+          {mode === "login" ? (
+            <>
+              Need an account?{" "}
+              <button
+                onClick={() => setMode("register")}
+                className="font-medium text-indigo-700 hover:text-indigo-900"
+              >
+                Register
+              </button>
+              . The first registered user becomes the admin.
+            </>
+          ) : (
+            <>
+              Already have one?{" "}
+              <button
+                onClick={() => setMode("login")}
+                className="font-medium text-indigo-700 hover:text-indigo-900"
+              >
+                Sign in
+              </button>
+              .
+            </>
+          )}
+        </p>
+      </div>
 
-      <form onSubmit={onSubmit} className="space-y-4 rounded border border-slate-200 bg-white p-5 shadow-sm">
+      <form onSubmit={onSubmit} className="card space-y-4 p-6">
         {mode === "register" && (
           <label className="block text-sm">
-            <span className="mb-1 block font-medium">Full name</span>
+            <span className="mb-1 block font-medium text-slate-700">Full name</span>
             <input
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full rounded border border-slate-300 px-3 py-2"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
             />
           </label>
         )}
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Email</span>
+          <span className="mb-1 block font-medium text-slate-700">Email</span>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded border border-slate-300 px-3 py-2"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Password</span>
+          <span className="mb-1 block font-medium text-slate-700">Password</span>
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded border border-slate-300 px-3 py-2"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
           />
         </label>
-        {err && <div className="rounded bg-red-50 p-2 text-sm text-red-700">{err}</div>}
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
-        >
+        {err && <div className="rounded-lg bg-red-50 p-2.5 text-sm text-red-700 ring-1 ring-red-200">{err}</div>}
+        <button type="submit" disabled={busy} className="btn-primary w-full">
           {busy ? "…" : mode === "login" ? "Sign in" : "Create account"}
         </button>
       </form>

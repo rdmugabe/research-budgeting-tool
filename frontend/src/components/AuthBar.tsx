@@ -28,25 +28,33 @@ export default function AuthBar() {
     router.push("/login");
   }
 
-  if (!loaded) return null;
+  if (!loaded) return <div className="h-7 w-20" />;
 
   if (!user) {
     return (
-      <Link href="/login" className="text-sm font-medium text-blue-700 hover:underline">
+      <Link
+        href="/login"
+        className="inline-flex items-center rounded-lg bg-slate-900 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-700"
+      >
         Sign in
       </Link>
     );
   }
 
+  const initial = (user.full_name || user.email).charAt(0).toUpperCase();
+
   return (
     <div className="flex items-center gap-3 text-sm">
-      <span className="text-slate-600">{user.email}</span>
-      <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
-        {user.role}
-      </span>
+      <div className="flex items-center gap-2">
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700">
+          {initial}
+        </span>
+        <span className="hidden sm:inline text-slate-700">{user.email}</span>
+        <span className="pill pill-indigo">{user.role}</span>
+      </div>
       <button
         onClick={logout}
-        className="text-slate-500 hover:text-slate-900"
+        className="text-slate-500 transition-colors hover:text-slate-900"
         title="Sign out"
       >
         Sign out

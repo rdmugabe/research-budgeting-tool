@@ -92,63 +92,52 @@ export default function PriceMasterDetail({ params }: { params: { id: string } }
   if (!version) return <div className="text-sm text-slate-500">Loading…</div>;
 
   return (
-    <div className="space-y-4">
-      <div>
-        <Link href="/admin/price-master" className="text-sm text-blue-700 hover:underline">
+    <div className="space-y-6">
+      <header>
+        <Link href="/admin/price-master" className="text-sm font-medium text-indigo-700 hover:text-indigo-900">
           ← Versions
         </Link>
-        <div className="mt-2 flex items-start justify-between">
+        <div className="mt-3 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">{version.label}</h1>
-            <div className="mt-1 text-sm text-slate-600">
-              Effective {version.effective_date}
-              <span className="mx-2">·</span>
-              {version.is_published ? (
-                <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                  PUBLISHED
-                </span>
-              ) : (
-                <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                  DRAFT
-                </span>
-              )}
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{version.label}</h1>
+              <span className={version.is_published ? "pill pill-blue" : "pill pill-emerald"}>
+                {version.is_published ? "PUBLISHED" : "DRAFT"}
+              </span>
             </div>
+            <div className="mt-1 text-sm text-slate-600">Effective {version.effective_date}</div>
           </div>
           {!version.is_published && (
-            <button
-              onClick={publish}
-              disabled={busy}
-              className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
-            >
+            <button onClick={publish} disabled={busy} className="btn-primary">
               Publish version
             </button>
           )}
         </div>
-      </div>
+      </header>
 
-      {err && <div className="rounded bg-red-50 p-3 text-sm text-red-700">{err}</div>}
+      {err && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200">{err}</div>}
 
       <input
         type="text"
         placeholder="Filter by code, name, or category…"
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
-        className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
+        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
       />
 
-      <div className="overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
+      <div className="card overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-left">
+          <thead className="border-b border-slate-200 bg-slate-50/60 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-2 py-2 font-medium">Code</th>
-              <th className="px-2 py-2 font-medium">Name</th>
-              <th className="px-2 py-2 font-medium">Category</th>
-              <th className="px-2 py-2 font-medium">Coverage</th>
-              <th className="px-2 py-2 text-right font-medium">AMC Base</th>
-              <th className="px-2 py-2 text-right font-medium">OH%</th>
-              <th className="px-2 py-2 text-right font-medium">Total</th>
-              <th className="px-2 py-2 text-right font-medium">Sp/Med</th>
-              <th className="px-2 py-2"></th>
+              <th className="px-3 py-2 font-medium">Code</th>
+              <th className="px-3 py-2 font-medium">Name</th>
+              <th className="px-3 py-2 font-medium">Category</th>
+              <th className="px-3 py-2 font-medium">Coverage</th>
+              <th className="px-3 py-2 text-right font-medium">AMC Base</th>
+              <th className="px-3 py-2 text-right font-medium">OH%</th>
+              <th className="px-3 py-2 text-right font-medium">Total</th>
+              <th className="px-3 py-2 text-right font-medium">Sp/Med</th>
+              <th className="px-3 py-2"></th>
             </tr>
           </thead>
           <tbody>
@@ -270,32 +259,40 @@ export default function PriceMasterDetail({ params }: { params: { id: string } }
                   </tr>
                 );
               }
+              const coveragePill =
+                p.coverage_status === "QCT_COVERED"
+                  ? "pill pill-emerald"
+                  : p.coverage_status === "RESEARCH_REQUIRED"
+                  ? "pill pill-indigo"
+                  : "pill pill-amber";
               return (
-                <tr key={p.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                  <td className="px-2 py-1.5 font-mono text-xs">{p.code}</td>
-                  <td className="px-2 py-1.5">{p.name}</td>
-                  <td className="px-2 py-1.5 text-slate-600">{p.category || "—"}</td>
-                  <td className="px-2 py-1.5">
-                    <span className="text-xs text-slate-700">{p.coverage_status}</span>
+                <tr key={p.id} className="border-t border-slate-100 transition-colors hover:bg-slate-50/40">
+                  <td className="px-3 py-1.5 font-mono text-xs text-slate-700">{p.code}</td>
+                  <td className="px-3 py-1.5 text-slate-800">{p.name}</td>
+                  <td className="px-3 py-1.5 text-slate-600">{p.category || "—"}</td>
+                  <td className="px-3 py-1.5">
+                    <span className={coveragePill}>
+                      {p.coverage_status.replace("_", " ").toLowerCase()}
+                    </span>
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">
+                  <td className="px-3 py-1.5 text-right tabular-nums text-slate-800">
                     {fmtMoney(p.price.amc_base_charge)}
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums text-slate-600">
+                  <td className="px-3 py-1.5 text-right tabular-nums text-slate-500">
                     {(p.price.overhead_pct * 100).toFixed(0)}%
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">
+                  <td className="px-3 py-1.5 text-right font-medium tabular-nums text-slate-900">
                     {fmtMoney(p.price.total_with_oh)}
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums text-slate-600">
+                  <td className="px-3 py-1.5 text-right tabular-nums text-slate-600">
                     {(p.price.sponsor_share * 100).toFixed(0)}/
                     {(p.price.medicare_share * 100).toFixed(0)}
                   </td>
-                  <td className="px-2 py-1.5 text-right">
+                  <td className="px-3 py-1.5 text-right">
                     {!version.is_published && (
                       <button
                         onClick={() => startEdit(p)}
-                        className="text-xs text-blue-700 hover:underline"
+                        className="text-xs font-medium text-indigo-700 hover:text-indigo-900"
                       >
                         Edit
                       </button>

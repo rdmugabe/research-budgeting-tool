@@ -62,26 +62,20 @@ export default function FixedFeesPage() {
   const passThroughs = active.fees.filter((f) => f.kind === "PASS_THROUGH");
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Fixed Fees</h1>
-          <p className="text-sm text-slate-600">
-            {active.label}
-            <span className="mx-2">·</span>
-            {active.is_published ? (
-              <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                PUBLISHED
-              </span>
-            ) : (
-              <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                DRAFT
-              </span>
-            )}
-          </p>
+    <div className="space-y-8">
+      <header>
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Fixed Fees</h1>
+        <div className="mt-1 flex items-center gap-2 text-sm text-slate-600">
+          <span>{active.label}</span>
+          <span className={active.is_published ? "pill pill-blue" : "pill pill-emerald"}>
+            {active.is_published ? "PUBLISHED" : "DRAFT"}
+          </span>
         </div>
-      </div>
-      {err && <div className="rounded bg-red-50 p-3 text-sm text-red-700">{err}</div>}
+        <p className="mt-2 text-sm text-slate-600">
+          Standard site fees and pass-throughs added on top of every trial budget.
+        </p>
+      </header>
+      {err && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200">{err}</div>}
 
       <FeeTable
         title="Site Fees"
@@ -135,11 +129,11 @@ function FeeTable({
   busy: boolean;
 }) {
   return (
-    <div>
-      <h2 className="mb-2 text-lg font-semibold">{title}</h2>
-      <div className="overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
+    <div className="card p-6">
+      <h2 className="section-heading mb-3">{title}</h2>
+      <div className="overflow-hidden rounded-lg border border-slate-200">
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-left">
+          <thead className="bg-slate-50/60 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-3 py-2 font-medium">Name</th>
               <th className="px-3 py-2 text-right font-medium">Amount</th>
@@ -194,15 +188,15 @@ function FeeTable({
                 );
               }
               return (
-                <tr key={f.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                  <td className="px-3 py-1.5">{f.name}</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums">{fmtMoney(f.site_default)}</td>
+                <tr key={f.id} className="border-t border-slate-100 transition-colors hover:bg-slate-50/40">
+                  <td className="px-3 py-1.5 text-slate-800">{f.name}</td>
+                  <td className="px-3 py-1.5 text-right font-medium tabular-nums text-slate-900">{fmtMoney(f.site_default)}</td>
                   <td className="px-3 py-1.5 text-slate-600">{f.frequency}</td>
                   <td className="px-3 py-1.5 text-right">
                     {editable && (
                       <button
                         onClick={() => onStart(f)}
-                        className="text-xs text-blue-700 hover:underline"
+                        className="text-xs font-medium text-indigo-700 hover:text-indigo-900"
                       >
                         Edit
                       </button>

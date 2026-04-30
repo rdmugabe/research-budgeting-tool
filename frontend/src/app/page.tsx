@@ -4,6 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, Trial } from "@/lib/api";
 
+const STATUS_PILL: Record<Trial["status"], string> = {
+  DRAFT: "pill pill-emerald",
+  NEGOTIATING: "pill pill-amber",
+  AWARDED: "pill pill-blue",
+  ARCHIVED: "pill pill-slate",
+};
+
 export default function TrialsPage() {
   const [trials, setTrials] = useState<Trial[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,102 +55,117 @@ export default function TrialsPage() {
   }
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Trials</h1>
+    <div className="space-y-8">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Trials</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Active client engagements. Open one to upload its SOA, set quantities, and run negotiation rounds.
+          </p>
+        </div>
         <button
           onClick={() => setShowForm((s) => !s)}
-          className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+          className={showForm ? "btn-secondary" : "btn-primary"}
         >
-          {showForm ? "Cancel" : "New Trial"}
+          {showForm ? "Cancel" : "New trial"}
         </button>
-      </div>
+      </header>
 
       {showForm && (
-        <form
-          onSubmit={onCreate}
-          className="mb-6 rounded border border-slate-200 bg-white p-4 shadow-sm"
-        >
+        <form onSubmit={onCreate} className="card p-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <label className="text-sm">
-              <span className="mb-1 block font-medium">Trial name *</span>
+              <span className="mb-1 block font-medium text-slate-700">Trial name *</span>
               <input
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded border border-slate-300 px-3 py-2"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 placeholder="NN9490-8266"
               />
             </label>
             <label className="text-sm">
-              <span className="mb-1 block font-medium">Sponsor</span>
+              <span className="mb-1 block font-medium text-slate-700">Sponsor</span>
               <input
                 value={sponsor}
                 onChange={(e) => setSponsor(e.target.value)}
-                className="w-full rounded border border-slate-300 px-3 py-2"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 placeholder="Novo Nordisk"
               />
             </label>
             <label className="text-sm">
-              <span className="mb-1 block font-medium">Protocol number</span>
+              <span className="mb-1 block font-medium text-slate-700">Protocol number</span>
               <input
                 value={protocol}
                 onChange={(e) => setProtocol(e.target.value)}
-                className="w-full rounded border border-slate-300 px-3 py-2"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
               />
             </label>
           </div>
-          <div className="mt-4 flex justify-end">
-            <button
-              disabled={creating || !name}
-              className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
-            >
+          <div className="mt-5 flex justify-end gap-2">
+            <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">
+              Cancel
+            </button>
+            <button disabled={creating || !name} className="btn-primary">
               {creating ? "Creating…" : "Create trial"}
             </button>
           </div>
         </form>
       )}
 
-      {err && <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{err}</div>}
+      {err && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200">{err}</div>}
 
       {loading ? (
         <div className="text-sm text-slate-500">Loading…</div>
       ) : trials.length === 0 ? (
-        <div className="rounded border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-          No trials yet. Click <span className="font-medium">New Trial</span> to start.
+        <div className="card p-12 text-center">
+          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-indigo-50 text-indigo-600">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="h-6 w-6" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m-7-7h14" />
+            </svg>
+          </div>
+          <h3 className="text-base font-semibold text-slate-900">No trials yet</h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Click <span className="font-medium">New trial</span> to start your first engagement.
+          </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
+        <div className="card overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left">
+            <thead className="border-b border-slate-200 bg-slate-50/60 text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-4 py-2 font-medium">Name</th>
-                <th className="px-4 py-2 font-medium">Sponsor</th>
-                <th className="px-4 py-2 font-medium">Protocol</th>
-                <th className="px-4 py-2 font-medium">Status</th>
-                <th className="px-4 py-2 font-medium">Created</th>
+                <th className="px-4 py-3 font-medium">Name</th>
+                <th className="px-4 py-3 font-medium">Sponsor</th>
+                <th className="px-4 py-3 font-medium">Protocol</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Created</th>
               </tr>
             </thead>
             <tbody>
               {trials.map((t) => (
-                <tr key={t.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                  <td className="px-4 py-2">
+                <tr
+                  key={t.id}
+                  className="border-b border-slate-100 last:border-0 transition-colors hover:bg-slate-50"
+                >
+                  <td className="px-4 py-3">
                     <Link
                       href={`/trials/${t.id}`}
-                      className="font-medium text-blue-700 hover:underline"
+                      className="font-medium text-indigo-700 hover:text-indigo-900"
                     >
                       {t.name}
                     </Link>
                   </td>
-                  <td className="px-4 py-2 text-slate-700">{t.sponsor || "—"}</td>
-                  <td className="px-4 py-2 text-slate-700">{t.protocol_number || "—"}</td>
-                  <td className="px-4 py-2">
-                    <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
-                      {t.status}
-                    </span>
+                  <td className="px-4 py-3 text-slate-700">{t.sponsor || "—"}</td>
+                  <td className="px-4 py-3 text-slate-700">{t.protocol_number || "—"}</td>
+                  <td className="px-4 py-3">
+                    <span className={STATUS_PILL[t.status]}>{t.status}</span>
                   </td>
-                  <td className="px-4 py-2 text-slate-500">
-                    {new Date(t.created_at).toLocaleString()}
+                  <td className="px-4 py-3 text-slate-500">
+                    {new Date(t.created_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
                   </td>
                 </tr>
               ))}

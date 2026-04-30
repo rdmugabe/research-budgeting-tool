@@ -179,52 +179,72 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
 
   if (!trial) return <div className="text-sm text-slate-500">Loading…</div>;
 
+  const STATUS_PILL: Record<typeof trial.status, string> = {
+    DRAFT: "pill pill-emerald",
+    NEGOTIATING: "pill pill-amber",
+    AWARDED: "pill pill-blue",
+    ARCHIVED: "pill pill-slate",
+  };
+
   return (
     <div className="space-y-8">
-      <div>
-        <Link href="/" className="text-sm text-blue-700 hover:underline">
+      <header>
+        <Link href="/" className="text-sm font-medium text-indigo-700 hover:text-indigo-900">
           ← Back to trials
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold">{trial.name}</h1>
-        <div className="mt-1 text-sm text-slate-600">
-          {trial.sponsor && <span>{trial.sponsor}</span>}
-          {trial.sponsor && trial.protocol_number && <span className="mx-2">·</span>}
-          {trial.protocol_number && <span>Protocol {trial.protocol_number}</span>}
-          <span className="mx-2">·</span>
-          <span className="rounded bg-slate-100 px-2 py-0.5 text-xs">{trial.status}</span>
+        <div className="mt-3 flex flex-wrap items-baseline justify-between gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{trial.name}</h1>
+          <span className={STATUS_PILL[trial.status]}>{trial.status}</span>
         </div>
-      </div>
+        <div className="mt-1.5 text-sm text-slate-600">
+          {trial.sponsor && <span>{trial.sponsor}</span>}
+          {trial.sponsor && trial.protocol_number && <span className="mx-2 text-slate-300">·</span>}
+          {trial.protocol_number && <span>Protocol {trial.protocol_number}</span>}
+        </div>
+      </header>
 
-      {err && <div className="rounded bg-red-50 p-3 text-sm text-red-700">{err}</div>}
+      {err && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200">{err}</div>}
 
       {/* SOA upload */}
-      <section className="rounded border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Schedule of Activity</h2>
-          <label className="cursor-pointer rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
+      <section className="card p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="section-heading">Schedule of Activity</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Client&apos;s SOA xlsx — X marks where each procedure applies per visit.
+            </p>
+          </div>
+          <label className={`cursor-pointer ${cells.length === 0 ? "btn-primary" : "btn-secondary"}`}>
             {cells.length === 0 ? "Upload client SOA" : "Replace SOA"}
             <input type="file" accept=".xlsx" onChange={onUpload} className="hidden" disabled={busy} />
           </label>
         </div>
         {cells.length === 0 ? (
-          <p className="text-sm text-slate-500">
-            Upload the client&apos;s SOA xlsx with X marks indicating which procedures apply at each visit.
-          </p>
+          <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50/60 p-6 text-center text-sm text-slate-500">
+            No SOA uploaded yet.
+          </div>
         ) : (
-          <div className="text-sm text-slate-700">
-            <span className="font-medium">{cells.length}</span> applicable cells across{" "}
-            <span className="font-medium">{visitLabels.length}</span> visits.
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+            <div>
+              <span className="text-2xl font-semibold tabular-nums text-slate-900">{cells.length}</span>
+              <span className="ml-1.5 text-slate-500">applicable cells</span>
+            </div>
+            <div>
+              <span className="text-2xl font-semibold tabular-nums text-slate-900">{visitLabels.length}</span>
+              <span className="ml-1.5 text-slate-500">visits</span>
+            </div>
           </div>
         )}
         {uploadResult && (
-          <div className="mt-3 rounded bg-slate-50 p-3 text-sm">
-            <div>
-              Parsed {uploadResult.matched_count} cells.{" "}
+          <div className="mt-4 rounded-lg bg-indigo-50/50 p-3 text-sm ring-1 ring-indigo-100">
+            <div className="text-slate-700">
+              Parsed <span className="font-medium">{uploadResult.matched_count}</span> cells
               {uploadResult.parsed_trial_name && (
                 <span className="text-slate-500">
-                  (Trial name in file: {uploadResult.parsed_trial_name})
+                  {" "}(trial name in file: {uploadResult.parsed_trial_name})
                 </span>
               )}
+              .
             </div>
             {uploadResult.unmatched_codes.length > 0 && (
               <div className="mt-2">
@@ -246,20 +266,25 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
 
       {/* Quantities */}
       {visitLabels.length > 0 && (
-        <section className="rounded border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Quantities</h2>
+        <section className="card p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="section-heading">Quantities</h2>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Per-visit completion counts drive the procedure roll-up.
+              </p>
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={() => fillAll(100)}
-                className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+                className="btn-secondary"
                 disabled={busy}
               >
                 Fill all = 100
               </button>
               <button
                 onClick={() => saveQuantities(quantities)}
-                className="rounded bg-slate-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-700"
+                className="btn-primary"
                 disabled={busy}
               >
                 Save
@@ -268,9 +293,13 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
           </div>
 
           {/* Dropout + screen-fail generator */}
-          <div className="mb-4 rounded bg-slate-50 p-3 text-sm">
+          <div className="mb-5 rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50/50 to-slate-50/50 p-4">
+            <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-indigo-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
+              Decay generator
+            </div>
             <div className="flex flex-wrap items-end gap-3">
-              <label>
+              <label className="text-sm">
                 <span className="mb-1 block text-xs font-medium text-slate-600">
                   Target post-rand
                 </span>
@@ -279,10 +308,10 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
                   min={0}
                   value={startCount}
                   onChange={(e) => setStartCount(Number(e.target.value) || 0)}
-                  className="w-24 rounded border border-slate-300 px-2 py-1"
+                  className="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1.5 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 />
               </label>
-              <label>
+              <label className="text-sm">
                 <span className="mb-1 block text-xs font-medium text-slate-600">
                   Screen fail (%)
                 </span>
@@ -293,17 +322,17 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
                   step={0.5}
                   value={screenFailPct}
                   onChange={(e) => setScreenFailPct(Number(e.target.value) || 0)}
-                  className="w-24 rounded border border-slate-300 px-2 py-1"
+                  className="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1.5 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 />
               </label>
-              <label>
+              <label className="text-sm">
                 <span className="mb-1 block text-xs font-medium text-slate-600">
                   Randomization visit
                 </span>
                 <select
                   value={randVisit}
                   onChange={(e) => setRandVisit(e.target.value)}
-                  className="max-w-xs rounded border border-slate-300 px-2 py-1"
+                  className="max-w-xs rounded-lg border border-slate-300 bg-white px-2 py-1.5 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 >
                   {visitLabels.map((v) => (
                     <option key={v} value={v}>
@@ -312,7 +341,7 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
                   ))}
                 </select>
               </label>
-              <label>
+              <label className="text-sm">
                 <span className="mb-1 block text-xs font-medium text-slate-600">
                   Dropout per visit (%)
                 </span>
@@ -323,89 +352,93 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
                   step={0.5}
                   value={dropoutPct}
                   onChange={(e) => setDropoutPct(Number(e.target.value) || 0)}
-                  className="w-24 rounded border border-slate-300 px-2 py-1"
+                  className="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1.5 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 />
               </label>
               <button
                 onClick={applyDropout}
                 disabled={busy}
-                className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+                className="btn-primary"
               >
                 Apply
               </button>
             </div>
-            <p className="mt-2 text-xs text-slate-500">
-              Pre-randomization visits are sized at{" "}
-              <code className="rounded bg-white px-1">target / (1 − screen fail)</code>; from
-              randomization onward the count decays as{" "}
-              <code className="rounded bg-white px-1">round(target × (1 − r)<sup>n</sup>)</code>.
-              You can still fine-tune any cell after applying.
+            <p className="mt-3 text-xs leading-relaxed text-slate-600">
+              Pre-randomization visits sized at{" "}
+              <code className="rounded bg-white/70 px-1.5 py-0.5 ring-1 ring-slate-200">target / (1 − screen fail)</code>;
+              from randomization onward each count decays as{" "}
+              <code className="rounded bg-white/70 px-1.5 py-0.5 ring-1 ring-slate-200">round(target × (1 − r)<sup>n</sup>)</code>.
+              Fine-tune any cell after applying.
             </p>
           </div>
-          <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 text-left">
-              <tr>
-                <th className="px-2 py-2 font-medium">Visit</th>
-                <th className="px-2 py-2 font-medium">Enrolled</th>
-                <th className="px-2 py-2 font-medium">Completion count</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visitLabels.map((v) => {
-                const q = quantitiesByVisit[v] || {
-                  visit_label: v,
-                  enrolled_count: 0,
-                  completion_count: 0,
-                };
-                return (
-                  <tr key={v} className="border-b border-slate-100 last:border-0">
-                    <td className="px-2 py-1.5">{v}</td>
-                    <td className="px-2 py-1.5">
-                      <input
-                        type="number"
-                        min={0}
-                        value={q.enrolled_count}
-                        onChange={(e) =>
-                          setQty(v, "enrolled_count", Number(e.target.value) || 0)
-                        }
-                        className="w-24 rounded border border-slate-300 px-2 py-1"
-                      />
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <input
-                        type="number"
-                        min={0}
-                        value={q.completion_count}
-                        onChange={(e) =>
-                          setQty(v, "completion_count", Number(e.target.value) || 0)
-                        }
-                        className="w-24 rounded border border-slate-300 px-2 py-1"
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-hidden rounded-lg border border-slate-200">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50/60 text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Visit</th>
+                  <th className="px-3 py-2 font-medium">Enrolled</th>
+                  <th className="px-3 py-2 font-medium">Completion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visitLabels.map((v) => {
+                  const q = quantitiesByVisit[v] || {
+                    visit_label: v,
+                    enrolled_count: 0,
+                    completion_count: 0,
+                  };
+                  return (
+                    <tr key={v} className="border-t border-slate-100 transition-colors hover:bg-slate-50/40">
+                      <td className="px-3 py-1.5 text-slate-700">{v}</td>
+                      <td className="px-3 py-1.5">
+                        <input
+                          type="number"
+                          min={0}
+                          value={q.enrolled_count}
+                          onChange={(e) =>
+                            setQty(v, "enrolled_count", Number(e.target.value) || 0)
+                          }
+                          className="w-24 rounded-md border border-slate-300 bg-white px-2 py-1 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        />
+                      </td>
+                      <td className="px-3 py-1.5">
+                        <input
+                          type="number"
+                          min={0}
+                          value={q.completion_count}
+                          onChange={(e) =>
+                            setQty(v, "completion_count", Number(e.target.value) || 0)
+                          }
+                          className="w-24 rounded-md border border-slate-300 bg-white px-2 py-1 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </section>
       )}
 
       {/* Rounds */}
-      <section className="rounded border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Budget Rounds</h2>
+      <section className="card p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="section-heading">Budget Rounds</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Negotiation snapshots — freeze one when you send the quote.
+            </p>
+          </div>
           <div className="flex gap-2">
             {rounds.length >= 2 && (
-              <Link
-                href={`/trials/${trialId}/compare`}
-                className="rounded border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50"
-              >
+              <Link href={`/trials/${trialId}/compare`} className="btn-secondary">
                 Compare rounds
               </Link>
             )}
             <button
               onClick={createRound}
-              className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+              className="btn-primary"
               disabled={busy || cells.length === 0}
             >
               New round
@@ -413,49 +446,50 @@ export default function TrialDetailPage({ params }: { params: { id: string } }) 
           </div>
         </div>
         {rounds.length === 0 ? (
-          <p className="text-sm text-slate-500">
-            No rounds yet. {cells.length === 0 ? "Upload a SOA first." : "Create one to start computing the budget."}
-          </p>
+          <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50/60 p-6 text-center text-sm text-slate-500">
+            {cells.length === 0
+              ? "Upload a SOA first to enable rounds."
+              : "No rounds yet. Create one to compute and export the budget."}
+          </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 text-left">
-              <tr>
-                <th className="px-2 py-2 font-medium">#</th>
-                <th className="px-2 py-2 font-medium">Label</th>
-                <th className="px-2 py-2 font-medium">Status</th>
-                <th className="px-2 py-2 font-medium">Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rounds.map((r) => (
-                <tr key={r.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                  <td className="px-2 py-1.5">{r.round_number}</td>
-                  <td className="px-2 py-1.5">
-                    <Link
-                      href={`/trials/${trialId}/rounds/${r.id}`}
-                      className="text-blue-700 hover:underline"
-                    >
-                      {r.label}
-                    </Link>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    {r.is_frozen ? (
-                      <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                        FROZEN
-                      </span>
-                    ) : (
-                      <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                        EDITABLE
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-2 py-1.5 text-slate-500">
-                    {new Date(r.created_at).toLocaleString()}
-                  </td>
+          <div className="overflow-hidden rounded-lg border border-slate-200">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50/60 text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-3 py-2 font-medium">#</th>
+                  <th className="px-3 py-2 font-medium">Label</th>
+                  <th className="px-3 py-2 font-medium">Status</th>
+                  <th className="px-3 py-2 font-medium">Created</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rounds.map((r) => (
+                  <tr
+                    key={r.id}
+                    className="border-t border-slate-100 transition-colors hover:bg-slate-50/40"
+                  >
+                    <td className="px-3 py-2 text-slate-500">{r.round_number}</td>
+                    <td className="px-3 py-2">
+                      <Link
+                        href={`/trials/${trialId}/rounds/${r.id}`}
+                        className="font-medium text-indigo-700 hover:text-indigo-900"
+                      >
+                        {r.label}
+                      </Link>
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className={r.is_frozen ? "pill pill-blue" : "pill pill-emerald"}>
+                        {r.is_frozen ? "FROZEN" : "EDITABLE"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-slate-500">
+                      {new Date(r.created_at).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </div>

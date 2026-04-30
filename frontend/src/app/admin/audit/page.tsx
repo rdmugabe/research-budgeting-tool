@@ -28,13 +28,18 @@ export default function AuditPage() {
   useEffect(load, [filterType]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Audit Log</h1>
+    <div className="space-y-6">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Audit Log</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Append-only history of every meaningful action across the system.
+          </p>
+        </div>
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          className="rounded border border-slate-300 px-3 py-1.5 text-sm"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
         >
           {ENTITY_TYPES.map((t) => (
             <option key={t} value={t}>
@@ -42,22 +47,22 @@ export default function AuditPage() {
             </option>
           ))}
         </select>
-      </div>
-      {err && <div className="rounded bg-red-50 p-3 text-sm text-red-700">{err}</div>}
-      <div className="overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
+      </header>
+      {err && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200">{err}</div>}
+      <div className="card overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-left">
+          <thead className="border-b border-slate-200 bg-slate-50/60 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-3 py-2 font-medium">When</th>
-              <th className="px-3 py-2 font-medium">User</th>
-              <th className="px-3 py-2 font-medium">Entity</th>
-              <th className="px-3 py-2 font-medium">Action</th>
-              <th className="px-3 py-2 font-medium">Details</th>
+              <th className="px-3 py-2.5 font-medium">When</th>
+              <th className="px-3 py-2.5 font-medium">User</th>
+              <th className="px-3 py-2.5 font-medium">Entity</th>
+              <th className="px-3 py-2.5 font-medium">Action</th>
+              <th className="px-3 py-2.5 font-medium">Details</th>
             </tr>
           </thead>
           <tbody>
             {entries.map((a) => (
-              <tr key={a.id} className="border-b border-slate-100 last:border-0">
+              <tr key={a.id} className="border-b border-slate-100 last:border-0 transition-colors hover:bg-slate-50/40">
                 <td className="px-3 py-1.5 text-slate-600 whitespace-nowrap">
                   {new Date(a.created_at).toLocaleString()}
                 </td>
@@ -65,15 +70,13 @@ export default function AuditPage() {
                   {a.user_id !== null ? `#${a.user_id}` : "—"}
                 </td>
                 <td className="px-3 py-1.5">
-                  <span className="font-mono text-xs">
+                  <span className="font-mono text-xs text-slate-700">
                     {a.entity_type}
                     {a.entity_id !== null && `/${a.entity_id}`}
                   </span>
                 </td>
                 <td className="px-3 py-1.5">
-                  <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium">
-                    {a.action}
-                  </span>
+                  <span className="pill pill-slate">{a.action}</span>
                 </td>
                 <td className="px-3 py-1.5 text-slate-700">{a.details || "—"}</td>
               </tr>

@@ -2,6 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg: 248 250 252;        /* very soft slate-50 */
+  --bg-tint: 241 245 249;    /* slate-100, used in section backgrounds */
+  --ring: 99 102 241;        /* indigo-500 */
+}
+
+html, body {
+  height: 100%;
+}
+
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(ellipse at top, rgba(99, 102, 241, 0.05), transparent 60%),
+    radial-gradient(ellipse at bottom right, rgba(16, 185, 129, 0.04), transparent 60%),
+    rgb(var(--bg));
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Make tabular numbers look right inside tables */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-slate-200/70 bg-white shadow-sm;
+  }
+  .section-heading {
+    @apply text-base font-semibold text-slate-900 tracking-tight;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white
+           shadow-sm transition-colors hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2
+           focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50
+           disabled:hover:bg-indigo-600;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm
+           font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50;
+  }
+  .pill {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset;
+  }
+  .pill-emerald { @apply bg-emerald-50 text-emerald-700 ring-emerald-200; }
+  .pill-blue    { @apply bg-blue-50 text-blue-700 ring-blue-200; }
+  .pill-amber   { @apply bg-amber-50 text-amber-800 ring-amber-200; }
+  .pill-slate   { @apply bg-slate-100 text-slate-700 ring-slate-200; }
+  .pill-indigo  { @apply bg-indigo-50 text-indigo-700 ring-indigo-200; }
 }

@@ -34,59 +34,58 @@ export default function PriceMasterListPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Price Master</h1>
-        <button
-          onClick={() => newDraftFrom(undefined)}
-          disabled={busy}
-          className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
-        >
+    <div className="space-y-8">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Price Master</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Versioned snapshots of every procedure&apos;s AMC price. Trials pin to a published version.
+          </p>
+        </div>
+        <button onClick={() => newDraftFrom(undefined)} disabled={busy} className="btn-primary">
           New empty version
         </button>
-      </div>
-      {err && <div className="rounded bg-red-50 p-3 text-sm text-red-700">{err}</div>}
-      <div className="overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
+      </header>
+      {err && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200">{err}</div>}
+      <div className="card overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-left">
+          <thead className="border-b border-slate-200 bg-slate-50/60 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-4 py-2 font-medium">Label</th>
-              <th className="px-4 py-2 font-medium">Effective</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium">Created</th>
-              <th className="px-4 py-2"></th>
+              <th className="px-4 py-3 font-medium">Label</th>
+              <th className="px-4 py-3 font-medium">Effective</th>
+              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Created</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody>
             {versions.map((v) => (
-              <tr key={v.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                <td className="px-4 py-2">
+              <tr key={v.id} className="border-b border-slate-100 last:border-0 transition-colors hover:bg-slate-50">
+                <td className="px-4 py-3">
                   <Link
                     href={`/admin/price-master/${v.id}`}
-                    className="font-medium text-blue-700 hover:underline"
+                    className="font-medium text-indigo-700 hover:text-indigo-900"
                   >
                     {v.label}
                   </Link>
                 </td>
-                <td className="px-4 py-2 text-slate-600">{v.effective_date}</td>
-                <td className="px-4 py-2">
-                  {v.is_published ? (
-                    <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                      PUBLISHED
-                    </span>
-                  ) : (
-                    <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                      DRAFT
-                    </span>
-                  )}
+                <td className="px-4 py-3 text-slate-600">{v.effective_date}</td>
+                <td className="px-4 py-3">
+                  <span className={v.is_published ? "pill pill-blue" : "pill pill-emerald"}>
+                    {v.is_published ? "PUBLISHED" : "DRAFT"}
+                  </span>
                 </td>
-                <td className="px-4 py-2 text-slate-500">
-                  {new Date(v.created_at).toLocaleString()}
+                <td className="px-4 py-3 text-slate-500">
+                  {new Date(v.created_at).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
                 </td>
-                <td className="px-4 py-2 text-right">
+                <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => newDraftFrom(v.id)}
-                    className="text-sm text-blue-700 hover:underline"
+                    className="text-sm font-medium text-indigo-700 hover:text-indigo-900"
                     disabled={busy}
                   >
                     Clone
