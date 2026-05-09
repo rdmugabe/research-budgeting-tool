@@ -20,7 +20,14 @@ class Settings(BaseSettings):
 
     # Comma-separated list of allowed origins for CORS. Use "*" to allow any
     # origin (only acceptable in trusted local-only setups).
-    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    cors_origins: str = (
+        "http://localhost:3000,http://127.0.0.1:3000,"
+        "http://localhost:3001,http://127.0.0.1:3001"
+    )
+    # Optional regex matching origins (in addition to cors_origins). Useful for
+    # platforms like Vercel that mint a new origin per deployment, e.g.
+    #   ^https://research-budgeting-tool[a-z0-9-]*\.vercel\.app$
+    cors_origin_regex: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:
